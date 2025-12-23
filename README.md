@@ -1,2 +1,80 @@
-# FireGuard
-FireGuard Dashboard is AI fire detection system using YOLOv11 and PyQt5. Features a Context-Aware Safe Zone filter to cut false positives, a Shrink-Wrap algorithm for precise flame mapping, and automated forensics with histogram-based de-duplication. Includes a pro dashboard with real-time playback and evidence logging.
+# 🔥 FireGuard: Pro Dashboard 智能火灾检测系统
+
+FireGuard 是一款基于深度学习与传统计算机视觉技术相结合的高精度实时火灾预警系统。它不仅能通过 **YOLOv11** 实时检测火焰与烟雾，还引入了定制化的**上下文感知逻辑**与**边界框精细化算法**，旨在解决实际场景中由于路灯、阳光反光等导致的误报难题。
+
+## 🌟 系统核心特性
+
+- **多模态实时检测**：利用 YOLOv11 同时捕捉火焰 (Fire) 与烟雾 (Smoke) 特征。
+- **上下文感知过滤 (Strict Mode)**：**本项目核心创新。** 采用“火烟共生”逻辑，只有当火焰中心位于烟雾的核心区域内时才触发警报，有效过滤孤立的路灯或反光。
+- **边界框精细化 (Shrink-Wrap)**：通过 HSV 色彩分割与形态学处理，对检测框进行二次压缩，实现火焰目标的像素级准确定位。
+- **全功能可视化面板**：
+  - **播放控制**：支持视频导入、实时暂停、以及可拖拽的视频进度条（Playhead）。
+  - **动态配置**：支持在界面上实时开启/关闭“安全区过滤”规则。
+- **自动化取证机制**：
+  - **智能录制**：引入“耐心值”缓冲机制，确保取证视频的完整性。
+  - **智能去重**：利用颜色直方图相关性算法，仅保存画面变化显著的截图。
+
+---
+
+## 🛠️ 关键算法深度解析
+
+### 1. 上下文感知逻辑 (Context-Aware Logic)
+为了降低误报，系统将烟雾检测框内部 75% 的面积定义为 **"核心安全区" (Central Safe Zone)**。
+- **判定逻辑**：`Fire_Center ∈ Smoke_Core_Zone`
+- **效果**：屏蔽了监控场景中绝大部分位于烟雾边缘之外的干扰光源。
+
+
+
+### 2. 边界框优化 (Box Refinement)
+系统对检测到的 ROI（感兴趣区域）进行 HSV 掩膜处理：
+- **颜色阈值**：针对火焰高饱和度特征，设置红色/橙色掩膜。
+- **形态学处理**：使用腐蚀与膨胀去除环境噪点。
+- **重构**：计算掩膜的最大连通域，并生成紧贴火焰边缘的最小外接矩形。
+
+### 3. 智能截图去重 (Smart Deduplication)
+- **技术**：基于 HSV 空间的颜色直方图对比 (`cv2.compareHist`)。
+- **阈值**：设定相关性系数 `0.92`。当新旧画面相似度低于 92% 时，才触发文件保存，极大地优化了存储效率。
+
+
+
+---
+
+## 🚀 快速开始
+
+### 1. 环境准备
+确保您的计算机已安装 Python 3.9+ 且具备 CUDA 加速（可选），然后安装依赖库：
+```bash
+pip install ultralytics opencv-python cvzone PyQt5 numpy
+```
+
+### 2. 模型与运行
+- 将训练好的模型权重文件 best.pt 放置于项目根目录下。
+- 启动 GUI 主程序：
+```bash
+python final_gui.py
+```
+
+🖥️ 交互操作指南
+导入资源：点击 📂 Import Video File 导入本地视频，或点击 📷 Use Webcam 开启实时监控。
+
+播放状态：点击蓝色播放/暂停按钮控制视频流；拖拽下方的蓝色滑块（Slider）可快速定位视频时间。
+
+实时调校：
+
+勾选 Enforce Safe Area (Strict)：开启严苛过滤模式。
+
+勾选 Show Debug Zones：实时显示蓝色辅助判定的核心区域。
+
+状态反馈：右侧状态栏实时反馈 SAFE (绿色安全)、WARNING (橙色警告) 或 CRITICAL (红色危急) 状态。
+
+
+```bash
+FireGuard/
+├── final_gui.py             # 系统主程序 (PyQt5 + YOLO 逻辑)
+├── best.pt                  # YOLOv11 训练权重
+├── Fire_Evidence_Images/    # 自动生成的去重后截图
+└── Fire_Evidence_Videos/    # 自动录制的灾害取证视频
+```
+
+汇报人: 刘顺子
+日期: 2025年12月
